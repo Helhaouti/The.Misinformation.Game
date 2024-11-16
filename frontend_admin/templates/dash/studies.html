@@ -1,0 +1,92 @@
+{% extends 'base.html' %} {% set title = "Tests Overview" %} {% block
+additional_head %}
+
+<link href="{{ url_for('static', filename='flowbite-2.3.0.min.css') }}" rel="stylesheet" />
+<script src="{{ url_for('static', filename='flowbite-2.3.0.min.js') }}"></script>
+
+<script defer src="{{ url_for('static', filename='scripts/pages/study/study_overview.bundle.js') }}"></script>
+<script defer src="{{ url_for('static', filename='scripts/pages/study/study_upload.bundle.js') }}"></script>
+
+{% endblock %} {% block content %}
+<div class="max-w-screen-xl mx-auto min-h-screen flex flex-col justify-start">
+  <h1 class="text-3xl font-bold text-center text-gray-800 py-4">
+    Studies Overview
+  </h1>
+
+  <section id="study-overview-container" class="flex flex-wrap justify-start">
+    <div class="w-full p-4 md:w-1/2 lg:w-1/3">
+      <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="p-6 text-center">
+          <h5 class="text-xl font-medium text-gray-700">Upload New Study</h5>
+          <p class="text-gray-600 mt-2">
+            Start a new research project by uploading relevant data and
+            documents.
+          </p>
+          <!-- Modal toggle -->
+          <button
+            class="mt-4 px-6 py-2 bg-blue-500 text-white font-medium text-sm uppercase rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out"
+            data-modal-target="upload-modal" data-modal-toggle="upload-modal" type="button">
+            Upload study
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Main Modal -->
+<div id="upload-modal"
+  class="hidden fixed inset-0 z-50 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
+  <div class="flex flex-col p-4 mx-4 items-start max-w-xl bg-white rounded-lg dark:bg-gray-800">
+    <!-- Modal content-->
+    <div class="relative">
+      <!-- Modal header-->
+      <div
+        class="flex items-center justify-between px-5 py-4 border-b dark:border-gray-600"
+      >
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+          Upload the Study
+        </h3>
+        <button
+          type="button"
+          class="p-1.5 ml-auto text-gray-400 bg-transparent rounded-lg hover:bg-gray-200 hover:text-gray-900 focus:bg-gray-300 focus:text-gray-900 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:bg-gray-700 dark:focus:text-white"
+          data-modal-hide="upload-modal" aria-label="Close">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body-->
+      <div class="px-5 py-4">
+        <div class="space-y-4">
+          <span className="flex mt-4 mb-3">
+            Upload your study configuration spreadsheet as an XLSX file.<br><br>
+            You can download your Google Sheets spreadsheet as an XLSX file by
+            selecting <strong>File</strong> &#10147;
+            <strong>Download</strong> &#10147;
+            <strong>Microsoft Excel (.xlsx) </strong>
+            within your configuration spreadsheet.
+          </span>
+          <div>
+            <label for="upload-file" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Upload
+              File</label>
+            <input
+              class="w-full p-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+              type="file" id="upload-study-file" name="upload"
+              accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+          </div>
+          <div>
+            <button id="study-submit-button"
+              class="w-full px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors duration-150"
+              type="submit">
+              Submit File
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

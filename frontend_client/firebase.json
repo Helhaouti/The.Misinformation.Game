@@ -1,0 +1,46 @@
+{
+  "hosting": {
+    "public": "build",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "src/config/firestore.rules",
+    "indexes": "src/config/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "src/config/storage.rules"
+  },
+  "emulators": {
+    "ui": {
+      "enabled": true,
+      "port": 9000,
+      "host": "https://cs-missinformationgame.web.app"
+    },
+    "auth": {
+      "port": 9099,
+      "host": "https://cs-missinformationgame.web.app"
+    },
+    "storage": {
+      "port": 9199,
+      "host": "https://cs-missinformationgame.web.app"
+    },
+    "firestore": {
+      "port": 9299,
+      "host": "https://cs-missinformationgame.web.app"
+    },
+    "hosting": {
+      "port": 9399,
+      "host": "https://cs-missinformationgame.web.app"
+    }
+  }
+}

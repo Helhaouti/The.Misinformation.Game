@@ -1,0 +1,17 @@
+{% extends "base.html" %} {% block content %}
+<div class="min-h-screen flex flex-col justify-center items-center px-4">
+  <h1 class="text-4xl font-bold text-red-600 mb-4">
+    An unexpected error has occurred
+  </h1>
+  <p class="text-lg mb-2">
+    The administrator has been notified. Sorry for the inconvenience!
+  </p>
+  <p class="mt-4">
+    <a
+      href="{{ url_for('index.index') }}"
+      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      >Back to Home</a
+    >
+  </p>
+</div>
+{% endblock %}

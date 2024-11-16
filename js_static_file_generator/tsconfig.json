@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "es2019",                          // Modern enough for recent features, adjust as necessary
+    "module": "commonjs",                        // Suitable for Node.js environments
+    "lib": ["dom", "esnext"],                     /* Specify library files to be included in the compilation */
+    "esModuleInterop": true,                     // For interop with non-ES module packages
+    "allowJs": true,                              /* Allow JavaScript files to be compiled */
+    "checkJs": false,                             /* Report errors in .js files */
+    "declaration": true,                          /* Generates corresponding '.d.ts' file */
+    "sourceMap": true,                            /* Generates corresponding '.map' file */
+
+    /* Strict Type-Checking Options */
+    "strict": false,                               /* Enable all strict type-checking options */
+
+    /* Module Resolution Options */
+    "moduleResolution": "node",                   /* Resolve modules using Node.js-style */
+    "baseUrl": "./",                              /* Base directory to resolve non-relative module names */
+    "paths": {},                                  /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl' */
+    "rootDirs": [],                               /* List of root folders whose combined content represents the structure of the project at runtime */
+    "outDir": "./dist",
+
+    /* Experimental Options */
+    "experimentalDecorators": true,               /* Enables experimental support for ES decorators */
+    "emitDecoratorMetadata": true,
+    /* Enables experimental support for emitting type metadata for decorators */
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": [
+    "node_modules",                               /* Exclude node_modules from compilation */
+    "dist"                                        /* Exclude distribution files */
+  ],
+  "include": [
+    "src/**/*",
+    "src/types/**/*"
+  ],
+  "typeRoots": [
+    "./node_modules/@types",
+    "./src/types"
+  ],
+}

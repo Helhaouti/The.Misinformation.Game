@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+
+
+{% block content %}
+    <h2>Welcome, by Misinfogame dashboard</h2>
+    <br/>
+
+    <div class="card text-center">
+        <div class="card-header">
+          Active test
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">test studie</h5>
+          <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+          <a href="{{ url_for('test')}}" class="btn btn-primary">Go to Tests</a>
+        </div>
+        <div class="card-footer text-body-secondary">
+          2 days ago
+        </div>
+      </div>
+    <br/>
+
+
+
+    <div class="card text-center">
+        <div class="card-header">
+          Featured
+        </div>
+        <div class="card-body">
+          <h5 class="card-title">Special title treatment</h5>
+          <p class="card-text">With supporting text below as a natural lead-in to additional content.</p>
+          <a href="#" class="btn btn-primary">Go somewhere</a>
+        </div>
+        <div class="card-footer text-body-secondary">
+          5 days ago
+        </div>
+      </div>
+{% endblock %}

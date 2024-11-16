@@ -1,0 +1,194 @@
+stages:
+  - deploy
+  - backend_build_and_push
+  - frontend_admin_build_and_push
+  - frontend_client_build_and_push
+  - update_container_apps
+  - destroy
+
+terraform_deploy:
+  image: zenika/terraform-azure-cli:latest
+  stage: deploy
+  tags:
+    - hva
+  id_tokens:
+    ID_TOKEN_1:
+      aud: https://gitlab.fdmci.hva.nl
+  before_script:
+    - az login --tenant $AZURE_TENANT_ID --service-principal --username $AZURE_CLIENT_ID --federated-token $ID_TOKEN_1
+    - az account show
+    - az account set --subscription $AZURE_SUBSCRIPTION_ID
+    - az group list -o table
+  script:
+    - cd workflows/terraform-main
+    - >
+      terraform init 
+      -backend-config="sas_token=$AZURE_CONTAINER_SAS_TOKEN" 
+      -var="key_vault_name=$AZURE_KEY_VAULT_NAME"
+      -var="secret_key_flask=$SECRET_KEY_FLASK"
+    - >
+      terraform plan 
+      -var="key_vault_name=$AZURE_KEY_VAULT_NAME"
+      -var="secret_key_flask=$SECRET_KEY_FLASK"
+      -out=terraform-deploy.plan
+    - terraform apply -auto-approve "terraform-deploy.plan"
+    - terraform output -raw backend_url > backend_url.txt
+  artifacts:
+    expire_in: 5 years # Default is 30 days
+    paths:
+      - workflows/terraform-main/backend_url.txt
+  when: manual
+  only:
+    - main
+
+docker_build_and_push_backend:
+  image: docker:dind
+  stage: backend_build_and_push
+  tags:
+    - hva
+  script:
+    - cd backend
+    - docker build -t $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/backend:latest . --platform linux/amd64
+    - echo $AZURE_CONTAINER_REGISTRY_PASSWORD | docker login $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER -u $AZURE_CONTAINER_REGISTRY_USERNAME --password-stdin
+    - docker push $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/backend:latest
+  artifacts:
+    paths:
+      - backend/job1_status.txt
+  after_script:
+    - echo "$CI_JOB_STATUS" > backend/job1_status.txt
+  when: manual
+  only:
+    - main
+
+docker_build_and_push_frontend_admin:
+  image: docker:dind
+  stage: frontend_admin_build_and_push
+  tags:
+    - hva
+  script:
+    - cd frontend_admin
+    - docker build -t $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_admin:latest . --platform linux/amd64
+    - echo $AZURE_CONTAINER_REGISTRY_PASSWORD | docker login $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER -u $AZURE_CONTAINER_REGISTRY_USERNAME --password-stdin
+    - docker push $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_admin:latest
+  artifacts:
+    paths:
+      - frontend_admin/job2_status.txt
+  after_script:
+    - echo "$CI_JOB_STATUS" > frontend_admin/job2_status.txt
+  when: manual
+  only:
+    - main
+
+docker_build_and_push_frontend_client:
+  image: docker:dind
+  stage: frontend_client_build_and_push
+  tags:
+    - hva
+  variables:
+    JOB_NAME: "terraform_deploy"
+    PROJECT_ID: "40744"
+  script:
+    - apk add --no-cache curl jq
+    - |
+      JOB_ID=$(curl --globoff \
+              --header "PRIVATE-TOKEN: $GITLAB_API_PAT" \
+              "https://gitlab.fdmci.hva.nl/api/v4/projects/$PROJECT_ID/jobs?scope[]=success" \
+              | jq -r --arg JOB_NAME "$JOB_NAME" '[.[] | select(.name == $JOB_NAME)] | first | .id')
+    - |
+      FC_API_URL=$(curl --location \
+                  --header "PRIVATE-TOKEN: $GITLAB_API_PAT" \
+                  "https://gitlab.fdmci.hva.nl/api/v4/projects/$PROJECT_ID/jobs/$JOB_ID/artifacts/workflows/terraform-main/backend_url.txt")
+    - echo "backend URL is $FC_API_URL"
+    - cd frontend_client
+    - |
+      docker build --build-arg REACT_APP_API_URL=$FC_API_URL --no-cache \
+        -t $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_client:latest . \
+        --platform linux/amd64
+    - echo $AZURE_CONTAINER_REGISTRY_PASSWORD | docker login $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER -u $AZURE_CONTAINER_REGISTRY_USERNAME --password-stdin
+    - docker push $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_client:latest
+  artifacts:
+    paths:
+      - frontend_client/job3_status.txt
+  after_script:
+    - echo "$CI_JOB_STATUS" > frontend_client/job3_status.txt
+  when: manual
+  only:
+    - main
+
+azure_container_apps_update:
+  image: mcr.microsoft.com/azure-cli:latest
+  stage: update_container_apps
+  tags:
+    - hva
+  variables:
+    AZURE_RESOURCE_GROUP: "misinfogame-rg"
+  id_tokens:
+    ID_TOKEN_1:
+      aud: https://gitlab.fdmci.hva.nl
+  before_script:
+    - az login --tenant $AZURE_TENANT_ID --service-principal --username $AZURE_CLIENT_ID --federated-token $ID_TOKEN_1
+    - az account show
+    - az account set --subscription $AZURE_SUBSCRIPTION_ID
+    - az group list -o table  
+  script:
+    - | 
+      if [ -e backend/job1_status.txt ] && grep -q "success" backend/job1_status.txt; then
+        backend_name=$(az containerapp list --query "[?contains(name, 'backend')].name" -o tsv)
+        az containerapp update -n $backend_name -g $AZURE_RESOURCE_GROUP --image $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/backend:latest
+        rm backend/job1_status.txt 
+      else 
+        echo "Backend build failed or wasn't triggered"
+      fi
+
+      if [ -e frontend_admin/job2_status.txt ] && grep -q "success" frontend_admin/job2_status.txt; then
+        frontend_admin_name=$(az containerapp list --query "[?contains(name, 'misinfogame-dashboard')].name" -o tsv)
+        az containerapp update -n $frontend_admin_name -g $AZURE_RESOURCE_GROUP --image $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_admin:latest
+        rm frontend_admin/job2_status.txt
+      else 
+        echo "Frontend_admin build failed or wasn't triggered"
+      fi
+
+      if [ -e frontend_client/job3_status.txt ] && grep -q "success" frontend_client/job3_status.txt; then
+        frontend_client_name=$(az containerapp list --query "[?contains(name, 'frontend-client')].name" -o tsv)
+        az containerapp update -n $frontend_client_name -g $AZURE_RESOURCE_GROUP --image $AZURE_CONTAINER_REGISTRY_LOGIN_SERVER/frontend_client:latest
+        rm frontend_client/job3_status.txt
+      else
+        echo "Frontend_client build failed or wasn't triggered"
+      fi
+  dependencies:
+    - docker_build_and_push_backend
+    - docker_build_and_push_frontend_admin
+    - docker_build_and_push_frontend_client
+  when: manual
+
+terraform_destroy:
+  image: zenika/terraform-azure-cli:latest
+  stage: destroy
+  tags:
+    - hva
+  id_tokens:
+    ID_TOKEN_1:
+      aud: https://gitlab.fdmci.hva.nl
+  before_script:
+    - az login --tenant $AZURE_TENANT_ID --service-principal --username $AZURE_CLIENT_ID --federated-token $ID_TOKEN_1
+    - az account show
+    - az account set --subscription $AZURE_SUBSCRIPTION_ID
+    - az group list -o table
+  script:
+    - cd workflows/terraform-main
+    - >
+      terraform init 
+      -backend-config="sas_token=$AZURE_CONTAINER_SAS_TOKEN" 
+      -var="key_vault_name=$AZURE_KEY_VAULT_NAME"
+      -var="secret_key_flask=$SECRET_KEY_FLASK"
+    - >
+      terraform destroy -auto-approve 
+      -var="key_vault_name=$AZURE_KEY_VAULT_NAME"
+      -var="secret_key_flask=$SECRET_KEY_FLASK"
+  when: manual
+  only:
+    - main
+  retry:
+    max: 2
+    when: always
+

@@ -1,0 +1,20 @@
+{% extends "base.html" %} {% block content %}
+<div class="min-h-screen flex flex-col justify-center items-center">
+  <h1 class="text-4xl font-bold text-red-600 mb-4">Unauthorized Access</h1>
+  <p class="text-lg">
+    You do not have permission to view the requested resource.
+  </p>
+  <p class="mt-4">
+    <a
+      href="{{ url_for('auth.login') }}"
+      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      >Login</a
+    >
+    <a
+      href="{{ url_for('index.index') }}"
+      class="ml-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      >Back to Home</a
+    >
+  </p>
+</div>
+{% endblock %}
